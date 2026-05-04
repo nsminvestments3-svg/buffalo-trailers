@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buffalo Trailers Booking System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{
+      box-sizing:border-box;
+      font-family:'Poppins',Arial,sans-serif;
+    }
+
+    body{
+      background:#f5f7fa;
+      color:#333;
+      margin:0;
+      padding:20px;
+    }
+
+    .container{
+      max-width:1000px;
+      margin:0 auto 25px;
+      background:white;
+      padding:25px;
+      border-radius:12px;
+      box-shadow:0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    h1,h2,h3{
+      color:#0d47a1;
+    }
+
+    .topbar{
+      max-width:1000px;
+      margin:0 auto 20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .topbar a{
+      background:#0d47a1;
+      color:white;
+      text-decoration:none;
+      padding:10px 18px;
+      border-radius:6px;
+      font-weight:600;
+    }
+
+    input,select,button,textarea{
+      width:100%;
+      padding:12px;
+      margin:8px 0;
+      border:1px solid #ccc;
+      border-radius:6px;
+      font-size:1rem;
+    }
+
+    button{
+      background:#ff6f00;
+      color:white;
+      border:none;
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    .admin-btn{
+      background:#0d47a1;
+    }
+
+    .danger{
+      background:#c62828;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:20px;
+      overflow-x:auto;
+    }
+
+    th,td{
+      border:1px solid #ddd;
+      padding:10px;
+      text-align:left;
+      font-size:0.95rem;
+    }
+
+    th{
+      background:#0d47a1;
+      color:white;
+    }
+
+    .notice{
+      background:#e3f2fd;
+      padding:15px;
+      border-left:5px solid #0d47a1;
+      margin-bottom:20px;
+      border-radius:6px;
+    }
+
+    @media(max-width:768px){
+      body{padding:10px;}
+      .container{padding:18px;}
+      table{font-size:0.85rem;}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <h1>Buffalo Trailers Booking System</h1>
+    <a href="index.html">Back to Website</a>
+  </div>
+
+  <div class="container">
+    <div class="notice">
+      <strong>Note:</strong> This version saves bookings on the same browser/device using localStorage.
+      Email and WhatsApp notifications will open pre-filled messages for sending.
+    </div>
+
+    <h2>Customer Booking Form</h2>
+    <input type="text" id="c_name" placeholder="Customer Name" required>
+    <input type="tel" id="c_phone" placeholder="Phone Number" required>
+    <input type="email" id="c_email" placeholder="Email Address">
+
+    <select id="c_trailer" required>
+      <option value="">Select Trailer / Service</option>
+      <option>BL100 Trailer</option>
+      <option>BL200 Trailer</option>
+      <option>BU250 Trailer</option>
+      <option>Water Bowser Trailer</option>
+      <option>Trailer Repairs</option>
+      <option>Trailer Manufacturing Quote</option>
+      <option>Transport Services</option>
+      <option>Data Dot Fitment</option>
+    </select>
+
+    <input type="date" id="c_start" required>
+    <input type="date" id="c_end" required>
+    <textarea id="c_notes" placeholder="Additional notes / trailer specifications"></textarea>
+
+    <button onclick="customerBooking()">Submit Booking</button>
+  </div>
+
+  <div class="container">
+    <h2>Admin Manual Booking Entry</h2>
+    <input type="text" id="name" placeholder="Customer Name">
+    <input type="tel" id="phone" placeholder="Phone Number">
+
+    <select id="trailer">
+      <option>BL100 Trailer</option>
+      <option>BL200 Trailer</option>
+      <option>BU250 Trailer</option>
+      <option>Water Bowser Trailer</option>
+      <option>Trailer Repairs</option>
+      <option>Trailer Manufacturing Quote</option>
+      <option>Transport Services</option>
+      <option>Data Dot Fitment</option>
+    </select>
+
+    <input type="date" id="start">
+    <input type="date" id="end">
+    <textarea id="notes" placeholder="Admin notes"></textarea>
+    <button class="admin-btn" onclick="addBooking()">Add Manual Booking</button>
+  </div>
+
+  <div class="container">
+    <h2>Booking Records</h2>
+    <button class="danger" onclick="clearAllBookings()">Clear All Bookings</button>
+    <table id="bookingTable">
+      <tr>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Trailer / Service</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Notes</th>
+        <th>Action</th>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+
+    function customerBooking(){
+      let name = document.getElementById('c_name').value.trim();
+      let phone = document.getElementById('c_phone').value.trim();
+      let email = document.getElementById('c_email').value.trim();
+      let trailer = document.getElementById('c_trailer').value;
+      let start = document.getElementById('c_start').value;
+      let end = document.getElementById('c_end').value;
+      let notes = document.getElementById('c_notes').value.trim();
+
+      if(!name || !phone || !trailer || !start || !end){
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      if(end < start){
+        alert('End date cannot be before start date.');
+        return;
+      }
+
+      let booking = {name,phone,email,trailer,start,end,notes,source:'Customer'};
+      bookings.push(booking);
+      saveBookings();
+      render();
+
+      sendNotifications(booking);
+      alert('Booking captured successfully. Please send the email/WhatsApp message if prompted.');
+    }
+
+    function addBooking(){
+      let name = document.getElementById('name').value.trim();
+      let phone = document.getElementById('phone').value.trim();
+      let email = '-';
+      let trailer = document.getElementById('trailer').value;
+      let start = document.getElementById('start').value;
+      let end = document.getElementById('end').value;
+      let notes = document.getElementById('notes').value.trim();
+
+      if(!name || !trailer || !start || !end){
+        alert('Please fill in customer name, trailer/service, start date and end date.');
+        return;
+      }
+
+      if(end < start){
+        alert('End date cannot be before start date.');
+        return;
+      }
+
+      bookings.push({name,phone,email,trailer,start,end,notes,source:'Admin'});
+      saveBookings();
+      render();
+      alert('Manual booking added successfully.');
+    }
+
+    function saveBookings(){
+      localStorage.setItem('bookings', JSON.stringify(bookings));
+    }
+
+    function render(){
+      let table = document.getElementById('bookingTable');
+      table.innerHTML = `
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Trailer / Service</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Notes</th>
+          <th>Action</th>
+        </tr>`;
+
+      bookings.forEach((b,index)=>{
+        table.innerHTML += `
+          <tr>
+            <td>${b.name || '-'}</td>
+            <td>${b.phone || '-'}</td>
+            <td>${b.email || '-'}</td>
+            <td>${b.trailer || '-'}</td>
+            <td>${b.start || '-'}</td>
+            <td>${b.end || '-'}</td>
+            <td>${b.notes || '-'}</td>
+            <td><button class="danger" onclick="deleteBooking(${index})">Delete</button></td>
+          </tr>`;
+      });
+    }
+
+    function deleteBooking(index){
+      if(confirm('Delete this booking?')){
+        bookings.splice(index,1);
+        saveBookings();
+        render();
+      }
+    }
+
+    function clearAllBookings(){
+      if(confirm('Are you sure you want to delete all bookings?')){
+        bookings = [];
+        saveBookings();
+        render();
+      }
+    }
+
+    function sendNotifications(booking){
+      const businessEmail = 'nsminvestments3@gmail.com';
+
+      // Replace with your real WhatsApp number, e.g. 27831234567
+      const waNumber = '27793387225';
+
+      let subject = encodeURIComponent('New Buffalo Trailers Booking Request');
+      let emailBody = encodeURIComponent(
+        `New Booking Request\n\n` +
+        `Name: ${booking.name}\n` +
+        `Phone: ${booking.phone}\n` +
+        `Email: ${booking.email || '-'}\n` +
+        `Trailer / Service: ${booking.trailer}\n` +
+        `Start Date: ${booking.start}\n` +
+        `End Date: ${booking.end}\n` +
+        `Notes: ${booking.notes || '-'}\n`
+      );
+
+      let whatsappMessage = encodeURIComponent(
+        `New Buffalo Trailers Booking%0A` +
+        `Name: ${booking.name}%0A` +
+        `Phone: ${booking.phone}%0A` +
+        `Email: ${booking.email || '-'}%0A` +
+        `Trailer/Service: ${booking.trailer}%0A` +
+        `From: ${booking.start}%0A` +
+        `To: ${booking.end}%0A` +
+        `Notes: ${booking.notes || '-'}`
+      );
+
+      window.open(`mailto:${businessEmail}?subject=${subject}&body=${emailBody}`, '_blank');
+      window.open(`https://wa.me/${waNumber}?text=${whatsappMessage}`, '_blank');
+    }
+
+    render();
+  </script>
+
+</body>
+</html>
